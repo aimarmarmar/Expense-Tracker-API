@@ -1,7 +1,7 @@
 package expense_tracker.model.dto.user;
 
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,14 +14,14 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CreateUserRequestDto {
 
-    @NotNull(message = "Username cannot be null")
-    @NotEmpty(message = "Username cannot be empty")
+    @NotBlank(message = "Username cannot be blank")
     private String username;
 
-    @NotNull(message = "Email cannot be null")
-    @NotEmpty(message = "Email cannot be empty")
+    @NotBlank(message = "Email cannot be blank")
+    @Email(message = "Email format is invalid")
     private String email;
 
+    @NotBlank(message = "Password cannot be blank")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
     

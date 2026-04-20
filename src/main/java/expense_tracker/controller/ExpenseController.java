@@ -22,7 +22,7 @@ public class ExpenseController {
 
     private final ExpenseService expenseService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ExpenseResponseDto createExpense(
             @Valid @RequestBody CreateExpenseRequestDto request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -32,7 +32,7 @@ public class ExpenseController {
         return expenseService.createExpense(request, userDetails.getUsername());
     }
 
-    @PatchMapping("update/{id}")
+    @PatchMapping("/{id}")
     public ExpenseResponseDto updateExpense(
             @Valid @RequestBody UpdateExpenseRequestDto request,
             @PathVariable UUID id,
@@ -42,7 +42,7 @@ public class ExpenseController {
         return expenseService.updateExpense(id, request, authentication.getName());
     }
 
-    @DeleteMapping("delete/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteExpense(
             @Valid @PathVariable UUID id,
             @AuthenticationPrincipal UserDetails userDetails
@@ -53,7 +53,7 @@ public class ExpenseController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/fetch")
+    @GetMapping
     public PagedResponseDto<ExpenseResponseDto> getExpenses(
             @RequestParam(required = false) String filter,
             @RequestParam(required = false) String startDate,
@@ -82,13 +82,9 @@ public class ExpenseController {
             @RequestParam(required = false) String endDate
     ) {
 
-        String username = (userDetails != null)
-                ? userDetails.getUsername()
-                : "testUser";
-
         return ResponseEntity.ok(
                 expenseService.getSummary(
-                        username,
+                        userDetails.getUsername(),
                         filter,
                         startDate,
                         endDate

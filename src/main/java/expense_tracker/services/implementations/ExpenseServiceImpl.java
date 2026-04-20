@@ -83,12 +83,26 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         validateOwnership(expense, username);
 
+        if (request.getAmount() != null) {
+            expense.setAmount(request.getAmount());
+        }
+
+        if (request.getCategory() != null) {
+            expense.setCategory(request.getCategory());
+        }
+
+        if (request.getDescription() != null) {
+            expense.setDescription(request.getDescription().trim());
+        }
+
         if (request.getExpenseDate() != null) {
             if (request.getExpenseDate().isAfter(LocalDate.now())) {
-                throw new BadRequestException("Expense date must be after date");
+                throw new BadRequestException("Expense date cannot be in the future");
             }
             expense.setExpenseDate(request.getExpenseDate());
         }
+
+        expense.setUpdatedAt(LocalDateTime.now());
 
         return mapToResponse(expenseRepository.save(expense));
     }
@@ -123,21 +137,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         LocalDate start = dates[0];
         LocalDate end = dates[1];
 
-        // 4. HANDLE FILTER
         LocalDate[] filtered = applyPresetFilter(filter, start, end);
         start = filtered[0];
         end = filtered[1];
-
-        log.info("=== DEBUG FILTER ===");
-        log.info("START: {}", start);
-        log.info("END: {}", end);
-        log.info("FILTER: {}", filter);
-        log.info("START DATE RAW: {}", startDate);
-        log.info("END DATE RAW: {}", endDate);
-        log.info("====================");
-
-
-        // 5. QUERY DB
 
         Pageable pageable = buildPageable(page, size, sort);
 
@@ -151,7 +153,6 @@ public class ExpenseServiceImpl implements ExpenseService {
             expenses = expenseRepository.findByUserUsernameAndDeletedFalse(username, pageable);
         }
 
-        // 6. MAP DTO
         return PagedResponseDto.<ExpenseResponseDto>builder()
                 .data(expenses.getContent().stream()
                         .map(this::mapToResponse)
@@ -169,8 +170,6 @@ public class ExpenseServiceImpl implements ExpenseService {
             String startDate,
             String endDate
     ) {
-
-        // 1. REUSE HELPER LU
         LocalDate[] dates = parseDateRange(startDate, endDate);
         LocalDate start = dates[0];
         LocalDate end = dates[1];
@@ -179,7 +178,6 @@ public class ExpenseServiceImpl implements ExpenseService {
         start = filtered[0];
         end = filtered[1];
 
-        // 2. DETERMINE FILTER TYPE
         String filterType;
         if (startDate != null && endDate != null) {
             filterType = "custom";
@@ -189,7 +187,6 @@ public class ExpenseServiceImpl implements ExpenseService {
             filterType = filter.toLowerCase();
         }
 
-        // 3. QUERY TOTAL
         Object[] summaryResult =
                 expenseRepository.getExpenseSummaryWithFilter(username, start, end);
 
@@ -200,7 +197,6 @@ public class ExpenseServiceImpl implements ExpenseService {
         BigDecimal totalExpenses = toBigDecimal(summaryResult[0])
                 .setScale(2, RoundingMode.HALF_UP);
 
-        // 4. QUERY CATEGORY
         List<ExpenseSummaryDto.CategoryItem> categories =
                 expenseRepository.getExpenseSummaryByCategoryWithFilter(username, start, end)
                         .stream()
@@ -211,7 +207,6 @@ public class ExpenseServiceImpl implements ExpenseService {
                                 .build())
                         .toList();
 
-        // 5. BUILD RESPONSE
         return ExpenseSummaryDto.builder()
                 .period(ExpenseSummaryDto.Period.builder()
                         .filter(filterType)

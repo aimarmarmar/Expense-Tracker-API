@@ -17,18 +17,18 @@ public class JwtUtil {
     @Value("${jwt.secretKey}")
     private String jwtSecretKey;
 
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+
     private SecretKey getSecretKey() {
-        return io.jsonwebtoken.security.Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
+        return Keys.hmacShaKeyFor(jwtSecretKey.getBytes());
     }
 
     public String generateToken(String username) {
-
-        log.info("Generating token for user={}", username);
-
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
                 .signWith(getSecretKey())
                 .compact();
 

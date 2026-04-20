@@ -24,55 +24,32 @@ import java.time.LocalDateTime;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder encoder;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     public UserResponseDto signUp(CreateUserRequestDto request) {
-
-        log.info(">>> MASUK SERVICE SIGNUP");
-
-        if (request.getUsername() == null || request.getUsername().isEmpty()) {
-            throw new BadRequestException("Username must not be empty");
-        }
-
-        if (request.getPassword() == null || request.getPassword().isEmpty()) {
-
-            throw new BadRequestException("Password must not be empty");
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("Username already exists");
         }
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new BadRequestException("Email already exists");
         }
 
-        if (request.getEmail() == null || request.getEmail().isEmpty()) {
-            throw new IllegalArgumentException("Email must not be empty");
-        }
-
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-
-        log.info("Checking duplicate user...");
-
-        String HashedPassword = encoder.encode(request.getPassword());
-
-        log.info("Password hashed successfully");
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
 
         User user = new User();
         LocalDateTime now = LocalDateTime.now();
 
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(HashedPassword);
+        user.setPassword(hashedPassword);
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
         user.setDeleted(false);
         user.setDeletedAt(null);
 
         User savedUser = userRepository.save(user);
-
-        log.info("User saved with id={}", savedUser.getId());
 
         return UserResponseDto.builder()
                 .id(savedUser.getId())
@@ -84,16 +61,12 @@ public class UserServiceImpl implements UserService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        log.info(">>> MASUK SERVICE LOGIN");
-
         User user = userRepository.findByUsernameAndDeletedFalse(request.getUsername())
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            throw new BadRequestException("Invalid username or password");
         }
-
-        log.info("Generating JWT token...");
 
         String token = jwtUtil.generateToken(user.getUsername());
         return LoginResponse.builder()
@@ -113,12 +86,8 @@ public class UserServiceImpl implements UserService {
     }
 
     public User getActiveUserByUsername(String username) {
-        User user = userRepository.findByUsername(username)
+        User user = userRepository.findByUsernameAndDeletedFalse(username)
                 .orElseThrow(() -> new NotFoundException("User not found"));
-
-        if (Boolean.TRUE.equals(user.getDeleted())) {
-            throw new NotFoundException("User is not active");
-        }
 
         return user;
     }

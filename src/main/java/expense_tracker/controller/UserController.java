@@ -25,9 +25,6 @@ public class UserController {
     @PostMapping("/signup")
     public UserResponseDto signUp(
             @Valid @RequestBody CreateUserRequestDto request) {
-
-        log.info("Signup request: username={}, email={}", request.getUsername(), request.getEmail());
-
         return userService.signUp(request);
     }
 
@@ -38,7 +35,7 @@ public class UserController {
         return userService.login(request);
     }
 
-    @DeleteMapping("delete/{username}")
+    @DeleteMapping("/users/me")
     public ResponseEntity<String> deleteUser(
             @AuthenticationPrincipal UserDetails user) {
         userService.deleteUser(user.getUsername());

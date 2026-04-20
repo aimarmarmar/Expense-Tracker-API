@@ -1,5 +1,6 @@
 package expense_tracker.model.dto.expense;
 
+import expense_tracker.model.enums.ExpenseCategory;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -17,8 +18,7 @@ public class UpdateExpenseRequestDto {
 
     @Positive(message = "Amount must be greater than zero")
     private BigDecimal amount;
-    private String category;
+    private ExpenseCategory category;
     private String description;
     private LocalDate expenseDate;
-    private LocalDate updatedAt;
 }
